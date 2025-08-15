@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ARCA – ISAP · Monotributista (Simulación)</title>
+<style>
+  :root{--pri:#0d5c63;--pri2:#157a85;--bg:#f4f7f8;--card:#fff;--txt:#122126;--ok:#1b7f5b;--warn:#b26a00;--err:#b00020;--muted:#5a6b70;--shadow:0 10px 30px rgba(0,0,0,.08)}
+  *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--txt)}
+  header{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;padding:24px 20px}
+  .wrap{max-width:1100px;margin:0 auto;padding:18px} h1{margin:0;font-size:26px;font-weight:800} .sub{opacity:.9;margin-top:6px}
+  .disc{background:#fff2;border-left:4px solid #fff7;padding:10px 12px;margin-top:10px;border-radius:10px;font-size:14px}
+  nav .nav{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap} nav .nav a, nav .nav button{text-decoration:none;border:0;border-radius:10px;padding:8px 12px;background:#0d5c63;color:#fff;cursor:pointer;font-weight:700;display:inline-block}
+  .card{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:18px}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+  .col-3{grid-column:span 3}.col-4{grid-column:span 4}.col-6{grid-column:span 6}.col-8{grid-column:span 8}.col-12{grid-column:span 12}
+  label{font-weight:650;font-size:14px}
+  input,select{width:100%;padding:12px 11px;margin-top:6px;border:1px solid #d4dee1;border-radius:12px;background:#fbfeff;outline:none;transition:box-shadow .2s,border-color .2s}
+  input:focus,select:focus{border-color:var(--pri2);box-shadow:0 0 0 3px rgba(21,122,133,.15)}
+  .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+  button{border:0;border-radius:12px;padding:12px 16px;font-weight:800;cursor:pointer} .btn{background:var(--pri);color:#fff} .btn.secondary{background:#e7eef0;color:#1b3136} .btn.ghost{background:transparent;border:2px solid #c6d7db;color:#234}
+  .tile{background:#fff;border:1px solid #e6eef1;border-radius:16px;padding:18px;box-shadow:var(--shadow)} .tile h3{margin:0 0 10px 0} .tile p{margin:6px 0 14px 0;color:#345} .tile a,.tile button{width:100%}
+  .hint{font-size:12px;color:var(--muted);margin-top:6px}
+  @media (max-width:780px){.col-8,.col-6,.col-4,.col-3{grid-column:span 12} }
+  /* tablas empleados */
+  table{width:100%;border-collapse:collapse} th,td{border:1px solid #e6eef1;padding:8px 10px;text-align:left;font-size:14px} th{background:#f3f8f9;font-weight:800}
+  .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800} .badge.ok{background:#e5f6ef;color:var(--ok)}
+  .steps{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px} .step{flex:1 1 150px;background:#e8eff0;border-radius:12px;padding:8px 10px;display:flex;gap:10px;align-items:center} .step.active{background:#d1eef1;border:1px solid #9ad5db} .step .n{background:#0d5c63;color:#fff;border-radius:10px;padding:3px 8px;font-weight:800;min-width:26px;text-align:center}
+  .errbox{font-size:12px;color:#fff;background:var(--err);padding:6px 8px;border-radius:10px;margin-top:8px;display:none} .errbox.show{display:inline-block}
+  .tag{display:inline-block;padding:6px 10px;background:#eef5f6;border:1px solid #cfe1e4;border-radius:999px;margin:4px 6px 0 0;font-size:12px}
+  .integrante{display:flex;gap:8px;margin-top:8px} .integrante input{flex:1}
+  .const-card{padding:16px;background:#fff;border:1px solid #e3eef1;border-radius:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>ARCA – Simulación Educativa</h1>
+    <div class="sub">Monotributista — simulación (Buenos Aires o CABA)</div>
+    <div class="disc">Uso pedagógico. No envía datos a servidores ni organismos. No usar datos reales.</div>
+    <nav><div class="nav">
+      <a href="../">Inicio</a>
+      <a href="../monotributo/">Monotributista</a>
+      <a href="../ri/">Responsable Inscripto</a>
+      <a href="../empleados/">Empleados</a>
+    </div></nav>
+  </div>
+</header>
+<main class="wrap">
+
+  <section id="viewApp" class="card">
+    <div id="steps" class="steps"></div>
+
+    <!-- Paso 0 -->
+    <section class="panel" data-step="0">
+      <h2>0) Datos del grupo</h2>
+      <div class="grid">
+        <div class="col-6"><label>Curso</label><input id="curso" placeholder="Ej.: 5° Económica A"></div>
+        <div class="col-12">
+          <label>Integrantes</label>
+          <div id="integrantesList"></div>
+          <div class="actions" style="justify-content:flex-start">
+            <button class="btn ghost" type="button" onclick="agregarIntegrante()">+ Agregar integrante</button>
+          </div>
+          <div class="hint">Carguen todos los integrantes (mínimo 1). Pueden quitar con la ❌.</div>
+        </div>
+      </div>
+      <div class="errbox" data-for="step0"></div>
+      <div class="actions"><a class="btn secondary" href="../">Volver</a><button class="btn" onclick="nextStep()">Continuar</button></div>
+    </section>
+
+    <!-- Paso 1 -->
+    <section class="panel" data-step="1" hidden>
+      <h2>1) Identificación del contribuyente</h2>
+      <div class="grid">
+        <div class="col-6"><label>Nombre</label><input id="nombre"></div>
+        <div class="col-6"><label>Apellido</label><input id="apellido"></div>
+        <div class="col-4"><label>Tipo de documento</label><select id="tipoDoc"><option>DNI</option><option>LE</option><option>LC</option></select></div>
+        <div class="col-4"><label>Número de documento (ficticio)</label><input id="nroDoc" maxlength="9" placeholder="7–9 dígitos"></div>
+        <div class="col-4"><label>CUIT/CUIL (simulado)</label><input id="cuit" maxlength="11" placeholder="11 dígitos"></div>
+        <div class="col-4"><label>Fecha de nacimiento</label><input id="nacimiento" placeholder="dd/mm/aaaa o aaaa-mm-dd"></div>
+        <div class="col-4"><label>Género</label><select id="genero"><option value="">Seleccionar</option><option>Femenino</option><option>Masculino</option><option>Otro / Prefiero no decir</option></select></div>
+        <div class="col-4"><label>Nacionalidad</label><input id="nacionalidad" placeholder="Argentina, etc."></div>
+        <div class="col-6"><label>Email</label><input id="email" placeholder="correo@colegio.com"></div>
+        <div class="col-6"><label>Teléfono</label><input id="telefono" type="text" inputmode="numeric" pattern="\d*" placeholder="Ej: 1123456789"></div>
+      </div>
+      <div class="errbox" data-for="step1"></div>
+      <div class="actions"><button class="btn secondary" onclick="prevStep()">Atrás</button><button class="btn" onclick="nextStep()">Continuar</button></div>
+    </section>
+
+    <!-- Paso 2 -->
+    <section class="panel" data-step="2" hidden>
+      <h2>2) Domicilios</h2>
+      <div class="grid">
+        <div class="col-6"><label>Calle</label><input id="calle"></div>
+        <div class="col-3"><label>Número</label><input id="numero"></div>
+        <div class="col-3"><label>Piso / Depto (opcional)</label><input id="piso" placeholder="Piso, Dpto"></div>
+        <div class="col-5"><label>Barrio / Localidad</label><input id="localidad"></div>
+        <div class="col-4"><label>Provincia</label><select id="provincia"></select></div>
+        <div class="col-3">
+          <label>Código Postal</label><input id="cp" maxlength="8" placeholder="BA: 4 dígitos · CABA: 4 dígitos o CPA">
+          <div class="hint" id="cpHint">Seleccioná provincia para ver la regla de CP.</div>
+        </div>
+        <div class="col-12"><label>¿El domicilio comercial es el mismo?</label><select id="domComercialIgual"><option value="si">Sí</option><option value="no">No, completar a continuación</option></select></div>
+      </div>
+      <div id="domComercialBox" hidden>
+        <h3>Domicilio comercial</h3>
+        <div class="grid">
+          <div class="col-6"><label>Calle</label><input id="c_calle"></div>
+          <div class="col-3"><label>Número</label><input id="c_numero"></div>
+          <div class="col-3"><label>Piso / Depto (opcional)</label><input id="c_piso"></div>
+          <div class="col-5"><label>Barrio / Localidad</label><input id="c_localidad"></div>
+          <div class="col-4"><label>Provincia</label><select id="c_provincia"></select></div>
+          <div class="col-3"><label>Código Postal</label><input id="c_cp" maxlength="8" placeholder="BA: 4 dígitos · CABA: 4 dígitos o CPA"></div>
+        </div>
+      </div>
+      <div class="errbox" data-for="step2"></div>
+      <div class="actions"><button class="btn secondary" onclick="prevStep()">Atrás</button><button class="btn" onclick="nextStep()">Continuar</button></div>
+    </section>
+
+    <!-- Paso 3 -->
+    <section class="panel" data-step="3" hidden>
+      <h2>3) Actividad económica</h2>
+      <div class="grid">
+        <div class="col-6"><label>Actividad Principal (simulada)</label><select id="actividad"></select><div class="hint">Lista pedagógica.</div></div>
+        <div class="col-6"><label>Descripción (opcional)</label><input id="actDesc" placeholder="Breve descripción"></div>
+        <div class="col-4"><label>Fecha de inicio de actividad</label><input id="fechaInicio" placeholder="dd/mm/aaaa o aaaa-mm-dd"></div>
+        <div class="col-4"><label>¿Posee punto de venta?</label><select id="pventa"><option>No</option><option>Sí</option></select></div>
+        <div class="col-4"><label>¿Tiene empleados?</label><select id="empleados"><option>No</option><option>Sí</option></select></div>
+      </div>
+      <div class="errbox" data-for="step3"></div>
+      <div class="actions"><button class="btn secondary" onclick="prevStep()">Atrás</button><button class="btn" onclick="nextStep()">Continuar</button></div>
+    </section>
+
+    <!-- Paso 4: IIBB ARBA/AGIP -->
+    <section class="panel" data-step="4" hidden>
+      <h2>4) Ingresos Brutos <span id="iibbLabel">(ARBA/AGIP)</span></h2>
+      <div class="grid">
+        <div class="col-4"><label>Condición IIBB</label><select id="condIIBB"><option>Local (única jurisdicción)</option><option>Convenio Multilateral</option></select></div>
+        <div class="col-4"><label>Código de actividad IIBB (NAES/NAIIBB)</label><input id="codIIBB" placeholder="Ej: 471130"></div>
+        <div class="col-4"><label>Fecha alta IIBB</label><input id="fechaIIBB" placeholder="dd/mm/aaaa o aaaa-mm-dd"></div>
+        <div class="col-6" id="cmBox" hidden>
+          <label>Jurisdicción principal (CM)</label>
+          <select id="jurPrincipal"></select>
+          <div class="hint">Elegí Provincia de Buenos Aires o CABA para sede CM.</div>
+        </div>
+        <div class="col-6">
+          <label>Régimen Simplificado</label>
+          <select id="regSimplif"><option>No</option><option>Sí</option></select>
+          <div class="hint" id="regSimplifHint">Si solo operás en BA o CABA, podés marcar “Sí” (simulado).</div>
+        </div>
+        <div class="col-12">
+          <label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" id="dfe"> <span>Constituye Domicilio Fiscal Electrónico <b id="dfeLabel">(ARBA/AGIP)</b> y acepta notificaciones (simulado).</span></label>
+        </div>
+      </div>
+      <div class="errbox" data-for="step4"></div>
+      <div class="actions"><button class="btn secondary" onclick="prevStep()">Atrás</button><button class="btn" onclick="nextStep()">Revisar</button></div>
+    </section>
+
+    <!-- Paso 5 -->
+    <section class="panel" data-step="5" hidden>
+      <h2>5) Revisión y confirmación</h2>
+      <div id="resumen" class="card" style="background:#f5fbfc;border:1px dashed #9ad5db"></div>
+      <label style="display:flex;gap:10px;align-items:flex-start;margin-top:12px"><input type="checkbox" id="acepta"> <span>Declaro que los datos cargados son ficticios y utilizados únicamente con fines educativos.</span></label>
+      <div class="errbox" data-for="step5"></div>
+      <div class="actions"><button class="btn secondary" onclick="prevStep()">Atrás</button><button class="btn" onclick="confirmar()">Confirmar alta (simulada)</button></div>
+    </section>
+
+    <!-- Paso 6 -->
+    <section class="panel" data-step="6" hidden>
+      <h2>Constancia de alta – Simulación</h2>
+      <div id="constancia" class="const-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b>ARCA – Simulación Educativa (ISAP)</b><div class="badge ok">Válida solo para prácticas escolares</div></div>
+        <div id="constanciaDatos"></div>
+        <div class="hint" style="margin-top:10px">Código verificación (ficticio): <span id="codigo"></span></div>
+      </div>
+      <div class="actions"><button class="btn" onclick="window.print()">Imprimir / Guardar PDF</button><button class="btn ghost" onclick="nuevaCarga()">Nueva inscripción</button><button class="btn secondary" onclick="exportExcel()">Descargar datos.xls</button></div>
+      <div class="hint">Registros guardados en este dispositivo (LocalStorage). Limpiarlos: <a href="#" onclick="borrarRegistros();return false;">borrar todo</a>.</div>
+      <div class="actions"><a class="btn secondary" href="../">Volver al inicio</a></div>
+    </section>
+  </section>
+<script>
+const PROVINCIAS=["Buenos Aires","CABA"];
+const ACTIVIDADES=[{id:"471130",nombre:"Kiosco / Venta minorista general"},{id:"620100",nombre:"Desarrollo/soporte de software"},{id:"561020",nombre:"Gastronomía (takeaway)"},{id:"855300",nombre:"Docencia particular / cursos"},{id:"433010",nombre:"Carpintería / oficios"}];
+const state = JSON.parse(localStorage.getItem('arca_mono_state_v2')||'{}');
+const registros = JSON.parse(localStorage.getItem('arca_mono_regs_v2')||'[]');
+const $=s=>document.querySelector(s); const $$=s=>Array.from(document.querySelectorAll(s));
+function setErr(step,msg){const e=$('.errbox[data-for="step'+step+'"]'); if(!e) return; if(msg){e.textContent=msg; e.classList.add('show');} else {e.classList.remove('show');}}
+function setInvalid(id,flag){const el=document.getElementById(id); if(!el) return; if(flag){el.classList.add('invalid')}else{el.classList.remove('invalid')}}
+function getVal(id){return (document.getElementById(id)?.value||'').trim()} function setVal(id,val){const el=document.getElementById(id); if(el) el.value=val??''}
+function saveState(){localStorage.setItem('arca_mono_state_v2',JSON.stringify(state))}
+const TIT=["Grupo","Identificación","Domicilios","Actividad","IIBB","Revisión","Constancia"];
+function renderSteps(cur=0){const w=$('#steps'); w.innerHTML=''; TIT.forEach((t,i)=>{const d=document.createElement('div'); d.className='step'+(i===cur?' active':''); d.innerHTML='<div class="n">'+i+'</div><div>'+t+'</div>'; w.appendChild(d);});}
+let step=0; function showStep(n){step=n; renderSteps(n); $$('.panel').forEach(p=>p.hidden=(parseInt(p.dataset.step)!==n)); window.scrollTo({top:0,behavior:'smooth'}); if(n===5) resumen(); if(n===6) constancia();}
+function agregarIntegrante(v=''){const c=$('#integrantesList'); const row=document.createElement('div'); row.className='integrante'; row.innerHTML='<input type="text" placeholder="Nombre y apellido" value="'+v.replace(/"/g,'&quot;')+'"> <button class="btn secondary" type="button" onclick="this.parentElement.remove()">❌</button>'; c.appendChild(row);} agregarIntegrante();
+(function init(){ const prov=$('#provincia'), cprov=$('#c_provincia'), jp=$('#jurPrincipal'); PROVINCIAS.forEach(p=>{const o=document.createElement('option'); o.textContent=p; prov.appendChild(o.cloneNode(true)); cprov.appendChild(o.cloneNode(true)); jp.appendChild(o.cloneNode(true));}); const act=$('#actividad'); ACTIVIDADES.forEach(a=>{const o=document.createElement('option'); o.value=a.id; o.textContent=a.id+' — '+a.nombre; act.appendChild(o);}); })();
+function updateHints(){ const p=getVal('provincia'); const isBA=(p==='Buenos Aires'); $('#cpHint').textContent = isBA?'CP BA: 4 dígitos.':'CP CABA: 4 dígitos o CPA (ej. 1000ABC o C1000ABC).'; $('#iibbLabel').textContent = isBA?'(ARBA)':'(AGIP)'; $('#dfeLabel').textContent = isBA?'(ARBA)':'(AGIP)'; $('#regSimplifHint').textContent = isBA?'Régimen Simplificado ARBA (simulado).':'Régimen Simplificado AGIP (simulado).'; }
+document.getElementById('provincia').addEventListener('change', updateHints);
+document.getElementById('domComercialIgual').addEventListener('change',()=>{$('#domComercialBox').hidden=($('#domComercialIgual').value!=='no');});
+document.getElementById('condIIBB').addEventListener('change',()=>{$('#cmBox').hidden = (getVal('condIIBB')!=='Convenio Multilateral')?true:false;});
+const digits=v=>(v||'').replace(/\D/g,''); const emailNorm=v=>(v||'').toLowerCase().replace(/\s+/g,'');
+document.addEventListener('input',e=>{ const id=e.target?.id; if(['telefono','nroDoc','cuit','numero','c_numero'].includes(id)) e.target.value=digits(e.target.value); if(id==='email') e.target.value=emailNorm(e.target.value); if(id==='cp'||id==='c_cp') e.target.value=e.target.value.toUpperCase().replace(/[^0-9A-Z]/g,''); });
+document.addEventListener('keydown',e=>{ if(e.target?.id==='telefono'){ const allow=['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End']; if(allow.includes(e.key)) return; if(!/^[0-9]$/.test(e.key)) e.preventDefault(); } });
+function parseDate(s){ if(!s) return null; const m1=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/); if(m1){const d=new Date(+m1[3],+m1[2]-1,+m1[1]); return isNaN(d)?null:d;} const m2=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/); if(m2){const d=new Date(+m2[1],+m2[2]-1,+m2[3]); return isNaN(d)?null:d;} const d=new Date(s); return isNaN(d)?null:d; }
+function cpValido(v,prov){ if(prov==='Buenos Aires') return /^\d{4}$/.test(v); return /^\d{4}([A-Za-z]{3})?$/.test(v) || /^[A-Z]\d{4}[A-Z]{3}$/.test(v); }
+function validate(n){ let ok=true; setErr(n,''); if(n===0){ const curso=getVal('curso'); const integrantes=[...$('#integrantesList').querySelectorAll('input')].map(i=>i.value.trim()).filter(Boolean); if(!curso){ok=false; setErr(0,'Ingresá el curso.'); setInvalid('curso',true);} else setInvalid('curso',false); if(integrantes.length===0){ok=false; setErr(0,'Cargá al menos un integrante.');} if(ok){Object.assign(state,{curso,integrantes}); saveState();} }
+  if(n===1){ const campos=[['nombre',v=>!!v,'Ingresá nombre'],['apellido',v=>!!v,'Ingresá apellido'],['nroDoc',v=>/^\d{7,9}$/.test(v),'DNI: 7–9 dígitos'],['cuit',v=>!v||/^\d{11}$/.test(v),'CUIT/CUIL: 11 dígitos (opcional)'],['nacimiento',v=>!!parseDate(v),'Fecha de nacimiento inválida'],['email',v=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailNorm(v)),'Correo no válido'],['telefono',v=>{const c=digits(v).length;return c>=6&&c<=15},'Teléfono: 6-15 dígitos']]; for(const [id,fn,msg] of campos){const v=getVal(id); const okf=fn(v); setInvalid(id,!okf); if(!okf&&ok){ok=false; setErr(1,msg); document.getElementById(id).focus();}} if(ok){Object.assign(state,{nombre:getVal('nombre'),apellido:getVal('apellido'),tipoDoc:getVal('tipoDoc'),nroDoc:getVal('nroDoc'),cuit:getVal('cuit'),nacimiento:getVal('nacimiento'),genero:getVal('genero'),nacionalidad:getVal('nacionalidad'),email:emailNorm(getVal('email')),telefono:getVal('telefono')}); saveState();} }
+  if(n===2){ const campos=[['calle',v=>!!v,'Ingresá calle'],['numero',v=>/^\d{1,6}$/.test(v),'Número inválido'],['localidad',v=>!!v,'Ingresá localidad'],['provincia',v=>!!v,'Seleccioná provincia'],['cp',v=>cpValido(v,getVal('provincia')),'CP inválido para la jurisdicción']]; for(const [id,fn,msg] of campos){const v=getVal(id); const okf=fn(v); setInvalid(id,!okf); if(!okf&&ok){ok=false; setErr(2,msg); document.getElementById(id).focus();}} const igual=$('#domComercialIgual').value!=='no'; if(!igual){ const camposC=[['c_calle',v=>!!v,'Domicilio comercial: calle'],['c_numero',v=>/^\d{1,6}$/.test(v),'Domicilio comercial: número'],['c_localidad',v=>!!v,'Domicilio comercial: localidad'],['c_provincia',v=>!!v,'Domicilio comercial: provincia'],['c_cp',v=>cpValido(v,getVal('c_provincia')),'Domicilio comercial: CP inválido']]; for(const [id,fn,msg] of camposC){const v=getVal(id); const okf=fn(v); setInvalid(id,!okf); if(!okf&&ok){ok=false; setErr(2,msg); document.getElementById(id).focus();}} } if(ok){ Object.assign(state,{calle:getVal('calle'),numero:getVal('numero'),piso:getVal('piso'),localidad:getVal('localidad'),provincia:getVal('provincia'),cp:getVal('cp')}); if($('#domComercialIgual').value!=='no'){Object.assign(state,{c_calle:state.calle,c_numero:state.numero,c_piso:state.piso,c_localidad:state.localidad,c_provincia:state.provincia,c_cp:state.cp});} else {Object.assign(state,{c_calle:getVal('c_calle'),c_numero:getVal('c_numero'),c_piso:getVal('c_piso'),c_localidad:getVal('c_localidad'),c_provincia:getVal('c_provincia'),c_cp:getVal('c_cp')});} saveState(); updateHints(); } }
+  if(n===3){ const campos=[['actividad',v=>!!v,'Seleccioná actividad'],['fechaInicio',v=>!!parseDate(v),'Fecha de inicio inválida']]; for(const [id,fn,msg] of campos){const v=getVal(id); const okf=fn(v); setInvalid(id,!okf); if(!okf&&ok){ok=false; setErr(3,msg); document.getElementById(id).focus();}} if(ok){Object.assign(state,{actividad:getVal('actividad'),actDesc:getVal('actDesc'),fechaInicio:getVal('fechaInicio'),pventa:getVal('pventa'),empleados:getVal('empleados')}); saveState();} }
+  if(n===4){ const campos=[['codIIBB',v=>!!v,'Ingresá código de actividad IIBB'],['fechaIIBB',v=>!!parseDate(v),'Fecha de alta IIBB inválida']]; for(const [id,fn,msg] of campos){const v=getVal(id); const okf=fn(v); setInvalid(id,!okf); if(!okf&&ok){ok=false; setErr(4,msg); document.getElementById(id).focus();}} if(getVal('condIIBB')==='Convenio Multilateral' && !getVal('jurPrincipal')){ ok=false; setErr(4,'Seleccioná jurisdicción principal para CM.'); } if(ok){ Object.assign(state,{condIIBB:getVal('condIIBB'),codIIBB:getVal('codIIBB'),fechaIIBB:getVal('fechaIIBB'),jurPrincipal:getVal('jurPrincipal'),dfe:document.getElementById('dfe').checked,regSimplif:getVal('regSimplif')}); saveState(); } }
+  if(n===5){ if(!$('#acepta').checked){ok=false; setErr(5,'Debés aceptar la declaración.');} }
+  return ok; }
+function nextStep(){ if(validate(step)) showStep(step+1); } function prevStep(){ showStep(Math.max(0,step-1)); }
+function resumen(){ const ints=(state.integrantes||[]).map(n=>'<span class="tag">'+n+'</span>').join(''); const ag= (state.provincia==='Buenos Aires'?'ARBA':(state.provincia==='CABA'?'AGIP':'ARBA/AGIP')); $('#resumen').innerHTML=`
+  <div class="grid">
+    <div class="col-12"><b>Grupo (${state.curso||''})</b><br>${ints||'-'}</div>
+    <div class="col-6"><b>Contribuyente</b><br>${state.apellido||''}, ${state.nombre||''} — ${state.tipoDoc||''} ${state.nroDoc||''} ${state.cuit?('— CUIT/CUIL '+state.cuit):''}</div>
+    <div class="col-6"><b>Nacimiento / Género</b><br>${state.nacimiento||''} · ${state.genero||''} · ${state.nacionalidad||''}</div>
+    <div class="col-6"><b>Contacto</b><br>${state.email||''} · ${state.telefono||''}</div>
+    <div class="col-6"><b>Domicilio fiscal</b><br>${state.calle||''} ${state.numero||''} ${state.piso?('('+state.piso+')'):''}, ${state.localidad||''}, ${state.provincia||''} (${state.cp||''})</div>
+    <div class="col-6"><b>Domicilio comercial</b><br>${state.c_calle||''} ${state.c_numero||''} ${state.c_piso?('('+state.c_piso+')'):''}, ${state.c_localidad||''}, ${state.c_provincia||''} (${state.c_cp||''})</div>
+    <div class="col-12"><b>Actividad</b><br>${state.actividad||''} — ${state.actDesc||''} · Inicio: ${state.fechaInicio||''} · PV: ${state.pventa||''} · Empleados: ${state.empleados||''}</div>
+    <div class="col-12"><b>Ingresos Brutos ${ag}</b><br>${state.condIIBB||''}${state.jurPrincipal?(' ('+state.jurPrincipal+')'):''} · Cód: ${state.codIIBB||''} · Alta: ${state.fechaIIBB||''} · DFE: ${(state.dfe?'Sí':'No')} · Régimen simplificado: ${state.regSimplif||'No'}</div>
+  </div>`; }
+function constancia(){ const ag= (state.provincia==='Buenos Aires'?'ARBA':(state.provincia==='CABA'?'AGIP':'ARBA/AGIP')); $('#constanciaDatos').innerHTML = `
+    <div style="line-height:1.7">
+      <b>Grupo (${state.curso||''}):</b> ${(state.integrantes||[]).join(', ')}<br>
+      <b>Contribuyente:</b> ${state.apellido||''}, ${state.nombre||''} — ${state.tipoDoc||''} ${state.nroDoc||''} ${state.cuit?('— CUIT/CUIL '+state.cuit):''}<br>
+      <b>Contacto:</b> ${state.email||''} / ${state.telefono||''}<br>
+      <b>Domicilio fiscal:</b> ${state.calle||''} ${state.numero||''} ${state.piso?('('+state.piso+')'):''}, ${state.localidad||''}, ${state.provincia||''} (${state.cp||''})<br>
+      <b>Actividad:</b> ${state.actividad||''} — ${state.actDesc||''} — <b>Inicio:</b> ${state.fechaInicio||''} — PV: ${state.pventa||''} — Empleados: ${state.empleados||''}<br>
+      <b>IIBB ${ag}:</b> ${state.condIIBB||''}${state.jurPrincipal?(' ('+state.jurPrincipal+')'):''} — Cód: ${state.codIIBB||''} — Alta: ${state.fechaIIBB||''} — DFE: ${(state.dfe?'Sí':'No')} — Régimen simplificado: ${state.regSimplif||'No'}<br>
+      <b>Régimen:</b> Monotributo (simulado)<br>
+      <b>Fecha de alta (simulada):</b> ${new Date().toLocaleString('es-AR')}
+    </div>`; $('#codigo').textContent = state.codigo||'-'; }
+const HEAD=["fechaRegistro","curso","integrantes","apellido","nombre","tipoDoc","nroDoc","cuit","nacimiento","genero","nacionalidad","email","telefono","calle","numero","piso","localidad","provincia","cp","c_calle","c_numero","c_piso","c_localidad","c_provincia","c_cp","actividad","actDesc","fechaInicio","pventa","empleados","condIIBB","codIIBB","fechaIIBB","jurPrincipal","dfe","regSimplif","codigo"];
+function htmlExcel(){ const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); const rows=registros.map(r=>'<tr>'+HEAD.map(k=>`<td>${esc(r[k]??'')}</td>`).join('')+'</tr>').join(''); const head=HEAD.map(h=>`<th>${h}</th>`).join(''); return `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><table border="1"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></body></html>`; }
+function exportExcel(){ const blob=new Blob([htmlExcel()],{type:'application/vnd.ms-excel'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='datos.xls'; a.click(); URL.revokeObjectURL(url); }
+function confirmar(){ if(!validate(5)) return; const id='MT'+Math.random().toString(36).slice(2,8).toUpperCase()+Date.now().toString().slice(-4); state.codigo=id; saveState(); const reg={ fechaRegistro:new Date().toISOString(), curso:state.curso||'', integrantes:(state.integrantes||[]).join(' | '), apellido:state.apellido||'', nombre:state.nombre||'', tipoDoc:state.tipoDoc||'', nroDoc:state.nroDoc||'', cuit:state.cuit||'', nacimiento:state.nacimiento||'', genero:state.genero||'', nacionalidad:state.nacionalidad||'', email:state.email||'', telefono:state.telefono||'', calle:state.calle||'', numero:state.numero||'', piso:state.piso||'', localidad:state.localidad||'', provincia:state.provincia||'', cp:state.cp||'', c_calle:state.c_calle||'', c_numero:state.c_numero||'', c_piso:state.c_piso||'', c_localidad:state.c_localidad||'', c_provincia:state.c_provincia||'', c_cp:state.c_cp||'', actividad:state.actividad||'', actDesc:state.actDesc||'', fechaInicio:state.fechaInicio||'', pventa:state.pventa||'', empleados:state.empleados||'', condIIBB:state.condIIBB||'', codIIBB:state.codIIBB||'', fechaIIBB:state.fechaIIBB||'', jurPrincipal:state.jurPrincipal||'', dfe:state.dfe?'Sí':'No', regSimplif:state.regSimplif||'No', codigo:state.codigo||'' }; registros.push(reg); localStorage.setItem('arca_mono_regs_v2',JSON.stringify(registros)); exportExcel(); showStep(6); }
+function nuevaCarga(){ localStorage.removeItem('arca_mono_state_v2'); Object.keys(state).forEach(k=>delete state[k]); $$('input').forEach(i=>{if(i.type!=='checkbox') i.value=''; else i.checked=false;}); $$('select').forEach(s=>s.selectedIndex=0); $('#integrantesList').innerHTML=''; agregarIntegrante(); $('#domComercialBox').hidden=true; showStep(0); }
+function borrarRegistros(){ localStorage.removeItem('arca_mono_regs_v2'); alert('Se borraron las inscripciones guardadas en este navegador.'); }
+if(state && Object.keys(state).length){ setVal('curso',state.curso); $('#integrantesList').innerHTML=''; (state.integrantes||['']).forEach(n=>agregarIntegrante(n)); const ids=["nombre","apellido","tipoDoc","nroDoc","cuit","nacimiento","genero","nacionalidad","email","telefono","calle","numero","piso","localidad","provincia","cp","c_calle","c_numero","c_piso","c_localidad","c_provincia","c_cp","actividad","actDesc","fechaInicio","pventa","empleados","condIIBB","codIIBB","fechaIIBB","jurPrincipal","regSimplif"]; ids.forEach(id=>setVal(id,state[id])); if(state.c_provincia) {$('#domComercialIgual').value='no'; $('#domComercialBox').hidden=false;} updateHints(); }
+renderSteps(0); showStep(0);
+</script>
+</main>
+</body>
+</html>
