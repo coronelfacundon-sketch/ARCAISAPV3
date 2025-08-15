@@ -177,4 +177,198 @@ input:focus,select:focus,textarea:focus{outline:0;border-color:#1291a1;box-shado
     <section class="panel" data-step="5" hidden>
       <h2>5) Obra social y adherentes</h2>
       <div class="grid">
-        <div class="col-6"><label>
+        <div class="col-6"><label>Obra social</label><select id="os"><option value="">Seleccionar</option><option>OSECAC</option><option>OSDE</option><option>IOMA</option><option>OSPJN</option><option>Otra</option></select></div>
+        <div class="col-6" style="display:flex;align-items:center;gap:8px"><input id="sinOS" type="checkbox"> <label for="sinOS">Sin obra social (simulación)</label></div>
+        <div class="col-12">
+          <label>Adherentes (familiares)</label>
+          <div id="adhBox"></div>
+          <div class="actions" style="justify-content:flex-start"><button class="btn s" type="button" onclick="addAdh()">+ Agregar adherente</button></div>
+        </div>
+      </div>
+      <div class="err" data-for="5"></div>
+      <div class="actions">
+        <button class="btn s" onclick="prev()">Atrás</button>
+        <button class="btn p" onclick="next()">Revisar</button>
+      </div>
+    </section>
+
+    <!-- PASO 6 -->
+    <section class="panel" data-step="6" hidden>
+      <h2>Revisión y confirmación</h2>
+      <div id="rev" class="card" style="border:1px dashed #9ad5db;background:#f2fbfd"></div>
+      <label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px"><input id="ok" type="checkbox"> <span>Declaro que los datos son ficticios y para uso educativo.</span></label>
+      <div class="err" data-for="6"></div>
+      <div class="actions">
+        <button class="btn s" onclick="prev()">Atrás</button>
+        <button class="btn p" onclick="confirmar()">Confirmar alta (simulada)</button>
+      </div>
+    </section>
+
+    <!-- PASO 7 -->
+    <section class="panel" data-step="7" hidden>
+      <h2>Constancia de alta – Simulación</h2>
+      <div id="const" class="card"></div>
+      <div class="actions">
+        <button class="btn p" onclick="window.print()">Imprimir / PDF</button>
+        <button class="btn s" onclick="exportXLS()">Descargar datos.xls</button>
+        <button class="btn s" onclick="credencial()">Credencial de pago</button>
+        <a class="btn s" href="../">Volver al inicio</a>
+      </div>
+      <div style="font-size:12px;color:#567;margin-top:6px">Limpiar todo: <a href="#" onclick="localStorage.removeItem('arca_mono_regs_v3');alert('Listo');return false;">borrar registros</a>.</div>
+    </section>
+  </section>
+</main>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+let STEP=0, S = JSON.parse(localStorage.getItem('arca_mono_state_v3')||'{}');
+const REGS = JSON.parse(localStorage.getItem('arca_mono_regs_v3')||'[]');
+
+function steps(){const t=["Grupo","Identificación","Domicilios","Tipo y Actividad","IIBB","Obra social","Revisión","Constancia"];$("#steps").innerHTML=t.map((x,i)=>`<div class="step ${i===STEP?'on':''}"><span class="n">${i}</span> ${x}</div>`).join('')}
+function show(n){STEP=n;steps();$$(".panel").forEach(p=>p.hidden=(+p.dataset.step!==n));window.scrollTo({top:0,behavior:"smooth"});if(n===6)renderRev();if(n===7)renderConst();}
+
+function addChip(container, val=""){const chip=document.createElement('span');chip.textContent=val||"Nombre Apellido";chip.contentEditable=true;chip.onblur=()=>{if(!chip.textContent.trim()) chip.remove()};container.appendChild(chip)}
+function addIntegrante(){addChip($("#integrantes"),"")}
+
+function addAdh(cuil="",vinc=""){const row=document.createElement('div');row.style.display='flex';row.style.gap='8px';row.style.marginTop='8px';row.innerHTML=`<input placeholder="CUIL (11 díg)" maxlength="11" oninput="this.value=this.value.replace(/\\D/g,'')" value="${cuil}"><select><option value="">Vínculo</option><option>Cónyuge</option><option>Hijo/a</option><option>Padre/Madre</option><option>Otro</option></select><button type="button" class="btn s" onclick="this.parentElement.remove()">❌</button>`;row.querySelector('select').value=vinc||"";$("#adhBox").appendChild(row)}
+function err(step,msg){const e=$(`.err[data-for="${step}"]`);if(!e)return;if(msg){e.textContent=msg;e.style.display="inline-block"}else e.style.display="none"}
+
+function cpOK(v,prov){return prov==="Buenos Aires"?/^\d{4}$/.test(v):/^\d{4}([A-Za-z]{3})?$/.test(v)||/^[A-Z]\d{4}[A-Z]{3}$/.test(v)}
+$("#prov").addEventListener('change',()=>{const p=$("#prov").value;$("#cpHelp").textContent=p==="Buenos Aires"?"CP BA: 4 dígitos.":"CP CABA: 4 dígitos o CPA (1000ABC / C1000ABC)";$("#iibbLab").textContent=p==="Buenos Aires"?"(ARBA)":"(AGIP)";$("#dfeLab").textContent=$("#iibbLab").textContent;$("#rsHelp").textContent=p==="Buenos Aires"?"Régimen Simplificado ARBA (simulado).":"Régimen Simplificado AGIP (simulado)."});
+$("#iibb").addEventListener('change',()=>{$("#cmBox").hidden=($("#iibb").value!=="Convenio Multilateral")});
+$("#comOK").addEventListener('change',()=>{$("#comBox").hidden=($("#comOK").value!=="no")});
+document.addEventListener("keydown",e=>{if(e.target.id==="tel"){if(["Backspace","Delete","ArrowLeft","ArrowRight","Tab"].includes(e.key))return;if(!/^[0-9]$/.test(e.key))e.preventDefault()}});
+
+function next(){if(validate(STEP))show(STEP+1)}
+function prev(){show(Math.max(0,STEP-1))}
+
+function parseD(s){if(!s)return null;let m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);if(m){const d=new Date(+m[3],+m[2]-1,+m[1]);return isNaN(d)?null:d}m=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);if(m){const d=new Date(+m[1],+m[2]-1,+m[3]);return isNaN(d)?null:d}const d=new Date(s);return isNaN(d)?null:d}
+
+function validate(n){
+  err(n,"");
+  if(n===0){
+    const curso=$("#curso").value.trim();
+    const ints=[...$("#integrantes").querySelectorAll('span')].map(s=>s.textContent.trim()).filter(Boolean);
+    if(!curso) return err(0,"Ingresá el curso."),false;
+    if(ints.length===0) return err(0,"Cargá al menos un integrante."),false;
+    Object.assign(S,{curso,integrantes:ints});
+  }
+  if(n===1){
+    const tests=[
+      ["nombre",v=>!!v,"Ingresá nombre"],["apellido",v=>!!v,"Ingresá apellido"],
+      ["nroDoc",v=>/^\d{7,9}$/.test(v),"Documento 7–9 dígitos"],
+      ["cuit",v=>!v||/^\d{11}$/.test(v),"CUIT/CUIL 11 dígitos (opcional)"],
+      ["nac",v=>!!parseD(v),"Fecha de nacimiento inválida"],
+      ["email",v=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v),"Correo no válido"],
+      ["tel",v=>{const c=v.replace(/\D/g,"").length;return c>=6&&c<=15},"Teléfono 6–15 dígitos"]
+    ];
+    for(const [id,fn,msg] of tests){const v=$("#"+id).value.trim();if(!fn(v)){err(1,msg);$("#"+id).focus();return false}}
+    Object.assign(S,{nombre:$("#nombre").value.trim(),apellido:$("#apellido").value.trim(),tipoDoc:$("#tipoDoc").value,nroDoc:$("#nroDoc").value.trim(),cuit:$("#cuit").value.trim(),nac:$("#nac").value.trim(),gen:$("#gen").value,nacbl:$("#nacbl").value.trim(),email:$("#email").value.trim().toLowerCase(),tel:$("#tel").value.trim()});
+  }
+  if(n===2){
+    const p=$("#prov").value;
+    const tests=[["calle",v=>!!v,"Ingresá calle"],["numero",v=>/^\d{1,6}$/.test(v),"Número inválido"],["loc",v=>!!v,"Ingresá localidad"],["cp",v=>cpOK(v,p),"CP inválido para la jurisdicción"]];
+    for(const [id,fn,msg] of tests){const v=$("#"+id).value.trim();if(!fn(v)){err(2,msg);$("#"+id).focus();return false}}
+    if($("#comOK").value==="no"){
+      const p2=$("#c_prov").value;
+      const t2=[["c_calle",v=>!!v,"Calle comercial"],["c_numero",v=>/^\d{1,6}$/.test(v),"Número comercial"],["c_loc",v=>!!v,"Localidad comercial"],["c_cp",v=>cpOK(v,p2),"CP comercial inválido"]];
+      for(const [id,fn,msg] of t2){const v=$("#"+id).value.trim();if(!fn(v)){err(2,msg);$("#"+id).focus();return false}}
+      Object.assign(S,{c_calle:$("#c_calle").value,c_numero:$("#c_numero").value,c_piso:$("#c_piso").value,c_loc:$("#c_loc").value,c_prov:$("#c_prov").value,c_cp:$("#c_cp").value});
+    }else{
+      Object.assign(S,{c_calle:$("#calle").value,c_numero:$("#numero").value,c_piso:$("#piso").value,c_loc:$("#loc").value,c_prov:$("#prov").value,c_cp:$("#cp").value});
+    }
+    Object.assign(S,{calle:$("#calle").value,numero:$("#numero").value,piso:$("#piso").value,loc:$("#loc").value,prov:$("#prov").value,cp:$("#cp").value});
+  }
+  if(n===3){
+    if(!$("#act").value) return err(3,"Seleccioná actividad."),false;
+    if(!parseD($("#inicio").value)) return err(3,"Fecha de inicio inválida."),false;
+    Object.assign(S,{tipo:$("#tipo").value,cat:$("#cat").value,act:$("#act").value,actdesc:$("#actdesc").value,inicio:$("#inicio").value,pv:$("#pv").value,emps:$("#emps").value});
+  }
+  if(n===4){
+    if(!$("#iibbCod").value) return err(4,"Ingresá código IIBB."),false;
+    if(!parseD($("#iibbAlta").value)) return err(4,"Fecha de alta IIBB inválida."),false;
+    if($("#iibb").value==="Convenio Multilateral" && !$("#cm").value) return err(4,"Elegí jurisdicción principal CM."),false;
+    Object.assign(S,{iibb:$("#iibb").value,iibbCod:$("#iibbCod").value,iibbAlta:$("#iibbAlta").value,cm:$("#cm").value||"",rs:$("#rs").value,dfe:$("#dfe").checked});
+  }
+  if(n===5){
+    if(!$("#sinOS").checked && !$("#os").value) return err(5,"Elegí una obra social o marcá 'Sin obra social'."),false;
+    const adh=[...$("#adhBox").children].map(r=>{const [cuil,sel]=r.querySelectorAll('input,select');return {cuil:cuil.value.trim(),vinc:sel.value}}).filter(a=>a.cuil||a.vinc);
+    Object.assign(S,{os:$("#os").value||"",sinOS:$("#sinOS").checked,adh});
+  }
+  return true;
+}
+
+function renderRev(){
+  const ints=(S.integrantes||[]).map(n=>`<span>${n}</span>`).join('');
+  const adh=(S.adh||[]).map(a=>`<span>${a.cuil||"-"} · ${a.vinc||"-"}</span>`).join('');
+  const ag=S.prov==="Buenos Aires"?"ARBA":"AGIP";
+  $("#rev").innerHTML=`
+    <div class="grid">
+      <div class="col-12"><b>Grupo (${S.curso||''})</b><div class="chips">${ints||'-'}</div></div>
+      <div class="col-6"><b>Contribuyente</b><br>${S.apellido||''}, ${S.nombre||''} — ${S.tipoDoc||''} ${S.nroDoc||''}${S.cuit?(' — CUIT '+S.cuit):''}</div>
+      <div class="col-6"><b>Contacto</b><br>${S.email||''} · ${S.tel||''}</div>
+      <div class="col-6"><b>Domicilio fiscal</b><br>${S.calle||''} ${S.numero||''} ${S.piso||''}, ${S.loc||''}, ${S.prov||''} (${S.cp||''})</div>
+      <div class="col-6"><b>Domicilio comercial</b><br>${S.c_calle||''} ${S.c_numero||''} ${S.c_piso||''}, ${S.c_loc||''}, ${S.c_prov||''} (${S.c_cp||''})</div>
+      <div class="col-12"><b>Tipo/Categoría</b><br>${S.tipo||''} · Cat: ${S.cat||'No'}</div>
+      <div class="col-12"><b>Actividad</b><br>${S.act||''} — ${S.actdesc||''} — Inicio: ${S.inicio||''}</div>
+      <div class="col-12"><b>IIBB ${ag}</b><br>${S.iibb||''} ${S.cm?('('+S.cm+')'):''} — Cód: ${S.iibbCod||''} — Alta: ${S.iibbAlta||''} — DFE: ${(S.dfe?'Sí':'No')} — RS: ${S.rs||'No'}</div>
+      <div class="col-12"><b>Obra social</b><br>${S.sinOS?'Sin obra social':(S.os||'-')}<div class="chips">${adh||''}</div></div>
+    </div>`;
+}
+
+function confirmar(){
+  if(!$("#ok").checked){err(6,"Debés aceptar la declaración.");return}
+  const codigo = ("ARCA-"+Math.random().toString(36).slice(2,8)).toUpperCase();
+  const row = Object.assign({fechaRegistro:new Date().toLocaleString("es-AR"),codigo}, S, {adhJSON:JSON.stringify(S.adh||[])});
+  REGS.push(row);
+  localStorage.setItem('arca_mono_regs_v3', JSON.stringify(REGS));
+  show(7);
+}
+
+function renderConst(){
+  const ag=S.prov==="Buenos Aires"?"ARBA":"AGIP";
+  const adh=(S.adh||[]).map(a=>`${a.cuil||'-'} (${a.vinc||'-'})`).join(', ');
+  $("#const").innerHTML=`
+    <b>ARCA – Constancia de Alta (simulada)</b><br><br>
+    <b>Contribuyente:</b> ${S.apellido||''}, ${S.nombre||''} — ${S.tipoDoc||''} ${S.nroDoc||''}${S.cuit?(' — CUIT '+S.cuit):''}<br>
+    <b>Grupo:</b> ${(S.integrantes||[]).join(', ')} — Curso: ${S.curso||''}<br>
+    <b>Domicilio fiscal:</b> ${S.calle||''} ${S.numero||''} ${S.piso||''}, ${S.loc||''}, ${S.prov||''} (${S.cp||''})<br>
+    <b>Actividad:</b> ${S.act||''} — ${S.actdesc||''} — Inicio: ${S.inicio||''}<br>
+    <b>IIBB ${ag}:</b> ${S.iibb||''} ${S.cm?('('+S.cm+')'):''} — Cód: ${S.iibbCod||''} — Alta: ${S.iibbAlta||''} — DFE: ${(S.dfe?'Sí':'No')} — RS: ${S.rs||'No'}<br>
+    <b>Obra social:</b> ${S.sinOS?'Sin obra social':(S.os||'-')} — <b>Adherentes:</b> ${adh||'-'}<br>
+    <b>Régimen:</b> Monotributo (simulado)<br>
+    <b>Fecha de emisión:</b> ${new Date().toLocaleString("es-AR")}<br>
+    <b>Código verificación:</b> <span id="cod"></span>
+  `;
+  $("#cod").textContent = "ARCA-"+(Math.random().toString(36).slice(2,10)).toUpperCase();
+}
+
+function exportXLS(){
+  const HEAD=["fechaRegistro","curso","integrantes","apellido","nombre","tipoDoc","nroDoc","cuit","nac","gen","nacbl","email","tel","calle","numero","piso","loc","prov","cp","c_calle","c_numero","c_piso","c_loc","c_prov","c_cp","tipo","cat","act","actdesc","inicio","pv","emps","iibb","iibbCod","iibbAlta","cm","rs","dfe","os","sinOS","adhJSON","codigo"];
+  const esc=s=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+  const rows=(JSON.parse(localStorage.getItem('arca_mono_regs_v3')||'[]')).map(r=>"<tr>"+HEAD.map(k=>`<td>${esc(r[k])}</td>`).join("")+"</tr>").join("");
+  const html=`<!DOCTYPE html><meta charset="utf-8"><table border="1"><thead><tr>${HEAD.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
+  const url=URL.createObjectURL(new Blob([html],{type:"application/vnd.ms-excel"})), a=document.createElement("a");
+  a.href=url;a.download="datos.xls";a.click();URL.revokeObjectURL(url);
+}
+
+function credencial(){
+  const per=new Date(), perStr=(String(per.getMonth()+1).padStart(2,"0")+"/"+per.getFullYear());
+  const html=`<!DOCTYPE html><html><meta charset="utf-8"><title>Credencial de pago (simulada)</title>
+  <style>body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:#f5f8fa;padding:24px}
+  .card{max-width:720px;margin:0 auto;background:#fff;border:1px solid #e3eef1;border-radius:12px;padding:18px}</style>
+  <body><div class="card"><h3>Credencial de pago — Monotributo (simulada)</h3>
+  <p><b>Contribuyente:</b> ${S.apellido||''}, ${S.nombre||''} (${S.tipoDoc||''} ${S.nroDoc||''})</p>
+  <p><b>CUIT/CUIL:</b> ${S.cuit||'-'}</p>
+  <p><b>Categoría (simulada):</b> ${S.cat||'No informada'}</p>
+  <p><b>Período:</b> ${perStr}</p>
+  <p><i>Documento con fines educativos, sin validez fiscal.</i></p></div></body></html>`;
+  const url=URL.createObjectURL(new Blob([html],{type:"text/html"})), a=document.createElement("a");
+  a.href=url;a.download="credencial_monotributo.html";a.click();URL.revokeObjectURL(url);
+}
+
+function init(){steps();addIntegrante();show(0)}
+init();
+</script>
+</body>
+</html>
